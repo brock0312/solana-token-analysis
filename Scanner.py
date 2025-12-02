@@ -89,41 +89,23 @@ class SolanaTokenScanner:
         """
         if not address: return None
 
-        # Query incoming transfers only, limit 100 for example
+        # Query incoming transfers only, find the very first incoming tx
         params = {
             "to": address,
             "chain": "solana",
-            "limit": 100,
+            "limit": 1,
             "sortKey": "time",
             "sortDir": "asc"
             }
         
         tx_data = self._get("/transfers", params)
         tx_list = self._normalize_transfers_list(tx_data)
-        
-        # If no incoming tx found, query 'base' (all txs)
-        if not tx_list:
-            params = {
-                "base": address, 
-                "chain": "solana", 
-                "limit": 100, 
-                "sortKey": "time", 
-                "sortDir": "asc"
-                }
-            tx_data = self._get("/transfers", params)
-            tx_list = self._normalize_transfers_list(tx_data)
+
 
         if not tx_list:
             return {"address": address, "creation_time": None, "funder": None}
 
-        # Sort by timestamp to ensure we always get the first transaction
-        valid_txs = [t for t in tx_list if t.get('blockTimestamp')]
-        if not valid_txs:
-             return {"address": address, "creation_time": None, "funder": None}
-
-        sorted_txs = sorted(valid_txs, key=lambda x: x['blockTimestamp'])
-        first_tx = sorted_txs[0]
-        
+        first_tx = tx_list[0]        
         ts = first_tx.get('blockTimestamp')
         creation_time = None
         if ts:
