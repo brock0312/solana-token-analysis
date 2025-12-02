@@ -54,8 +54,8 @@ class SolanaTokenScanner:
                 "status": "KNOWN",
                 "risk_score": 100,
                 "label": "HIGH",
-                "flags": [f"Arkham Database Flagged: {entity_name or label_name}"],
-                "details": {"entity": entity_name, "reason": "Database Blacklist"}
+                "flags": [f"Arkham Database Flagged: {label_name}"],
+                "details": {"label": label_name, "reason": "Database Blacklist"}
             }
 
         # Check for trusted entities (use CEXs as whitelist in this demo)
@@ -156,8 +156,13 @@ class SolanaTokenScanner:
 
         Logic: High ratio of unique receivers suggests a script funding multiple wallets.
         """
-        if not address: return False
-        params = {"from": address, "chain": "solana", "limit": 100}
+        if not address: 
+            return False
+        params = {
+            "from": address, 
+            "chain": "solana", 
+            "limit": 100
+            }
         data = self._get("/transfers", params)
         tx_list = self._normalize_transfers_list(data)
         if not tx_list or len(tx_list) < 20: return False # Threshhold 20 tx
@@ -269,7 +274,7 @@ class SolanaTokenScanner:
         token_params = {
             "base": token_address, 
             "chain": "solana", 
-            "limit": 100, 
+            "limit": 1, 
             "sortKey": "time", 
             "sortDir": "asc"
          }
@@ -283,16 +288,11 @@ class SolanaTokenScanner:
         if not valid_txs:
             return {"token": token_address, "error": "No valid timestamp data"}
             
-        sorted_txs = sorted(valid_txs, key=lambda x: x['blockTimestamp'])
-        first_tx = sorted_txs[0]
+        first_tx = valid_txs[0]
         from_data = first_tx.get('fromAddress') or {}
         to_data = first_tx.get('toAddress') or {}
         
-        deployer = from_data.get('address')
-        
-        if not deployer:
-             deployer = to_data.get('address')
-
+        deployer = from_data.get('address')    
         print(f"  > Identified Deployer: {deployer}")
         
         # Step 2: Trace funding
@@ -318,8 +318,8 @@ class SolanaTokenScanner:
             if layer['age_days'] != -1:
                 desc_parts.append(f"Age:{layer['age_days']}d")
             
-            # If the deployer/source wallet was created shorter than 30/60 days, considered fresh
-            if layer['age_days'] != -1 and ((d == 0 and layer['age_days'] < 30) or (d > 0 and layer['age_days'] <60)):
+            # If the deployer/source wallet was created shorter than 90/180 days, considered fresh
+            if layer['age_days'] != -1 and ((d == 0 and layer['age_days'] < 90) or (d > 0 and layer['age_days'] <180)):
                 flags.append(f"{role} is fresh wallet ({layer['age_days']} days)(Addr: {addr_short})")
                 
             if layer.get('is_cex'):
