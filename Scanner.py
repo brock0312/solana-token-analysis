@@ -236,12 +236,12 @@ class SolanaTokenScanner:
             age_risk = 0
             if age_days != -1:
                 if depth == 0: # Deployer
-                    if age_days < 7: age_risk = 30
-                    elif age_days < 14: age_risk = 20
-                    elif age_days < 30: age_risk = 10
+                    if age_days < 30: age_risk = 30
+                    elif age_days < 90: age_risk = 20
+                    elif age_days < 180: age_risk = 10
                 else: # If the source addresses are also new, considered higher risk. 
-                    if age_days < 30: age_risk = 20
-                    elif age_days < 60: age_risk = 10
+                    if age_days < 90: age_risk = 20
+                    elif age_days < 180: age_risk = 10
             
             layer_info['risk_contribution'] += age_risk
             trace_risk_score += age_risk
@@ -251,8 +251,8 @@ class SolanaTokenScanner:
                 is_distributor = self.analyze_dispersion_pattern(current_addr)
                 if is_distributor:
                     layer_info['is_distributor'] = True
-                    layer_info['risk_contribution'] += 30
-                    trace_risk_score += 30
+                    layer_info['risk_contribution'] += 50
+                    trace_risk_score += 50
             
             chain_info.append(layer_info)
             
